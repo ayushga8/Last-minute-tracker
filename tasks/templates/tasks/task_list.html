@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Tasks{% endblock %}
+{% block page_title %}Tasks{% endblock %}
+
+{% block content %}
+<div class="page-header-actions">
+    <a href="{% url 'task_create' %}" class="btn btn-primary" id="btn-add-task">
+        <span>+</span> New Task
+    </a>
+    <a href="{% url 'ai_refresh' %}" class="btn btn-ghost" id="btn-ai-refresh-tasks">
+        🤖 AI Prioritize
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar glass-card" id="task-filters">
+    <form method="get" class="filter-form">
+        {{ filter_form.status }}
+        {{ filter_form.priority }}
+        {{ filter_form.category }}
+        {{ filter_form.sort }}
+        <button type="submit" class="btn btn-sm btn-primary" id="btn-apply-filters">Apply</button>
+    </form>
+</div>
+
+<!-- Task List -->
+<div class="task-grid" id="task-grid">
+    {% if tasks %}
+        {% for task in tasks %}
+        <div class="task-card glass-card" data-priority="{{ task.priority_tag }}" data-deadline="{{ task.deadline|date:'c' }}" id="task-card-{{ task.id }}">
+            <div class="task-card-header">
+                <span class="priority-badge priority-{{ task.priority_tag }}">
+                    {{ task.get_priority_tag_display }}
+                </span>
+                <span class="task-category">{{ task.category }}</span>
+            </div>
+            <h3 class="task-card-title">
+                <a href="{% url 'task_detail' task.pk %}">{{ task.title }}</a>
+            </h3>
+            {% if task.description %}
+            <p class="task-card-desc">{{ task.description|truncatewords:20 }}</p>
+            {% endif %}
+            <div class="task-card-meta">
+                <div class="task-deadline-info">
+                    <span class="deadline-label">Due:</span>
+                    <span class="deadline-value">{{ task.deadline|date:"M d, H:i" }}</span>
+                </div>
+                <div class="task-countdown" data-deadline="{{ task.deadline|date:'c' }}">
+                    <span class="countdown-value">--</span>
+                </div>
+            </div>
+            <div class="task-card-footer">
+                <span class="task-status status-{{ task.status }}">{{ task.get_status_display }}</span>
+                <div class="task-actions">
+                    {% if task.status != 'completed' %}
+                    <form method="post" action="{% url 'task_complete' task.pk %}" class="inline-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-success" title="Complete" id="btn-complete-{{ task.id }}">✓</button>
+                    </form>
+                    {% endif %}
+                    <a href="{% url 'task_edit' task.pk %}" class="btn btn-sm btn-ghost" title="Edit" id="btn-edit-{{ task.id }}">✏️</a>
+                    <a href="{% url 'task_delete' task.pk %}" class="btn btn-sm btn-danger" title="Delete" id="btn-delete-{{ task.id }}">🗑</a>
+                </div>
+            </div>
+            <!-- Priority Score Bar -->
+            <div class="priority-score-bar">
+                <div class="priority-score-fill" style="width: {{ task.priority_score|floatformat:0 }}%; background: {{ task.priority_color }};"></div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="empty-state-full">
+        <span class="empty-icon-large">📝</span>
+        <h3>No tasks yet</h3>
+        <p>Create your first task to get started with AI-powered prioritization!</p>
+        <a href="{% url 'task_create' %}" class="btn btn-primary">Create Task</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Verify OTP{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block auth_content %}
+<div class="auth-container">
+    <div class="auth-card glass-card">
+        <div class="auth-header">
+            <span class="auth-logo">🔐</span>
+            <h1>Verify Your Email</h1>
+            <p class="auth-subtitle">Enter the 6-digit code sent to<br><strong>{{ email }}</strong></p>
+        </div>
+
+        <form method="post" class="auth-form" id="otp-verify-form">
+            {% csrf_token %}
+            <div class="otp-input-group" id="otp-inputs">
+                {{ form.digit_1 }}
+                {{ form.digit_2 }}
+                {{ form.digit_3 }}
+                {{ form.digit_4 }}
+                {{ form.digit_5 }}
+                {{ form.digit_6 }}
+            </div>
+
+            {% if form.errors %}
+            <div class="form-error-block">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                    <span class="form-error">{{ error }}</span>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary btn-full" id="btn-verify-otp">
+                Verify & Sign In
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Didn't receive the code? <a href="{% url 'login' %}" class="auth-link" id="link-resend">Send again</a></p>
+            <p class="otp-timer">Code expires in <span id="otp-countdown">5:00</span></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Auto-focus next digit input
+    document.querySelectorAll('.otp-digit').forEach((input, index, inputs) => {
+        input.addEventListener('input', (e) => {
+            if (e.target.value && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+        });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                inputs[index - 1].focus();
+            }
+        });
+        // Handle paste
+        input.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+            pasted.split('').forEach((char, i) => {
+                if (inputs[index + i]) {
+                    inputs[index + i].value = char;
+                }
+            });
+            if (inputs[index + pasted.length - 1]) {
+                inputs[index + pasted.length - 1].focus();
+            }
+        });
+    });
+
+    // Countdown timer
+    let timeLeft = 300;
+    const countdown = document.getElementById('otp-countdown');
+    const timer = setInterval(() => {
+        timeLeft--;
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        countdown.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            countdown.textContent = 'Expired';
+            countdown.style.color = 'var(--color-critical)';
+        }
+    }, 1000);
+</script>
+{% endblock %}

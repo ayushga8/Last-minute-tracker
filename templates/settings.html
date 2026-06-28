@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+    <!-- Profile -->
+    <div class="settings-card glass-card" id="settings-profile">
+        <h3 class="settings-section-title">👤 Profile</h3>
+        <form method="post" class="styled-form">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">First Name</label>
+                    <input type="text" name="first_name" value="{{ user.first_name }}" class="form-input" id="settings-first-name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" name="last_name" value="{{ user.last_name }}" class="form-input" id="settings-last-name">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" value="{{ user.email }}" class="form-input" disabled id="settings-email">
+                <span class="form-hint">Email cannot be changed.</span>
+            </div>
+            <div class="settings-toggles">
+                <label class="toggle-label">
+                    <input type="checkbox" name="notification_email" {% if user.notification_email %}checked{% endif %} id="toggle-email-notif">
+                    <span class="toggle-switch"></span>
+                    Email Notifications
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" name="notification_in_app" {% if user.notification_in_app %}checked{% endif %} id="toggle-inapp-notif">
+                    <span class="toggle-switch"></span>
+                    In-App Notifications
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" name="dark_mode" {% if user.dark_mode %}checked{% endif %} id="toggle-dark-mode">
+                    <span class="toggle-switch"></span>
+                    Dark Mode
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary" id="btn-save-settings">Save Changes</button>
+        </form>
+    </div>
+
+
+
+    <!-- Danger Zone -->
+    <div class="settings-card glass-card danger-zone" id="settings-danger">
+        <h3 class="settings-section-title">⚠️ Danger Zone</h3>
+        <p class="danger-text">Logging out will end your current session.</p>
+        <a href="{% url 'logout' %}" class="btn btn-danger" id="btn-settings-logout">Log Out</a>
+    </div>
+</div>
+{% endblock %}

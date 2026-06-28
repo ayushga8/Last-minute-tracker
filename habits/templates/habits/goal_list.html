@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load habit_filters %}
+{% block title %}Goals{% endblock %}
+{% block page_title %}Goals{% endblock %}
+
+{% block content %}
+<!-- Add Goal Form -->
+<div class="inline-add-form glass-card" id="add-goal-section">
+    <h3>Set a New Goal</h3>
+    <form method="post" class="styled-form" id="goal-add-form">
+        {% csrf_token %}
+        <div class="form-row">
+            <div class="form-group flex-2">{{ form.title }}</div>
+            <div class="form-group">{{ form.target_date }}</div>
+        </div>
+        <div class="form-group">{{ form.description }}</div>
+        {% if form.linked_habits.field.queryset.exists %}
+        <div class="form-group">
+            <label class="form-label">Link to Habits</label>
+            {{ form.linked_habits }}
+        </div>
+        {% endif %}
+        <button type="submit" class="btn btn-primary" id="btn-add-goal">+ Create Goal</button>
+    </form>
+</div>
+
+<!-- Goal List -->
+<div class="goal-grid" id="goal-grid">
+    {% if goals %}
+        {% for goal in goals %}
+        <div class="goal-card glass-card {% if goal.is_overdue %}goal-overdue{% endif %}" id="goal-card-{{ goal.id }}">
+            <div class="goal-card-header">
+                <h3 class="goal-title">{{ goal.title }}</h3>
+                <span class="goal-days-left {% if goal.days_remaining < 0 %}overdue{% elif goal.days_remaining <= 7 %}urgent{% endif %}">
+                    {% if goal.days_remaining < 0 %}
+                        {{ goal.days_remaining|abs_value }} days overdue
+                    {% elif goal.days_remaining == 0 %}
+                        Due today!
+                    {% else %}
+                        {{ goal.days_remaining }} days left
+                    {% endif %}
+                </span>
+            </div>
+
+            {% if goal.description %}
+            <p class="goal-desc">{{ goal.description|truncatewords:25 }}</p>
+            {% endif %}
+
+            <!-- Progress Bar -->
+            <div class="progress-section">
+                <div class="progress-header">
+                    <span class="progress-label">Progress</span>
+                    <span class="progress-percent" style="color: {{ goal.progress_color }}">{{ goal.progress_percent }}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ goal.progress_percent }}%; background: {{ goal.progress_color }};"></div>
+                </div>
+            </div>
+
+            <!-- Manual Progress Update -->
+            <form method="post" action="{% url 'goal_update_progress' goal.pk %}" class="progress-update-form">
+                {% csrf_token %}
+                <input type="range" name="progress" min="0" max="100" value="{{ goal.progress_percent }}" class="progress-slider" id="slider-{{ goal.id }}"
+                    oninput="document.getElementById('slider-val-{{ goal.id }}').textContent = this.value + '%'">
+                <div class="progress-update-row">
+                    <span id="slider-val-{{ goal.id }}">{{ goal.progress_percent }}%</span>
+                    <button type="submit" class="btn btn-sm btn-primary" id="btn-update-progress-{{ goal.id }}">Update</button>
+                </div>
+            </form>
+
+            <!-- Linked Habits -->
+            {% if goal.linked_habits.exists %}
+            <div class="linked-habits">
+                <span class="linked-label">Linked Habits:</span>
+                {% for habit in goal.linked_habits.all %}
+                <span class="linked-habit-tag">🔥 {{ habit.name }} ({{ habit.streak_count }})</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="goal-card-footer">
+                <span class="goal-target">🎯 Target: {{ goal.target_date|date:"M d, Y" }}</span>
+                <form method="post" action="{% url 'goal_delete' goal.pk %}" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-ghost btn-danger-text" onclick="return confirm('Delete this goal?')" id="btn-delete-goal-{{ goal.id }}">🗑</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="empty-state-full">
+        <span class="empty-icon-large">🎯</span>
+        <h3>No goals set</h3>
+        <p>Set goals and link them to habits to track your journey!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Calendar{% endblock %}
+{% block page_title %}Calendar{% endblock %}
+
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="calendar-page">
+    <div class="calendar-actions glass-card" id="calendar-controls">
+        <span class="calendar-status connected">📅 Your Tasks Calendar</span>
+    </div>
+
+    <div class="calendar-container glass-card" id="fullcalendar-wrapper">
+        <div id="calendar"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+            },
+            events: '{% url "calendar_events_json" %}',
+            eventClick: function(info) {
+                if (info.event.url) {
+                    info.jsEvent.preventDefault();
+                    window.location.href = info.event.url;
+                }
+            },
+            height: 'auto',
+            themeSystem: 'standard',
+            nowIndicator: true,
+            navLinks: true,
+            editable: false,
+            dayMaxEvents: 3,
+        });
+        calendar.render();
+    });
+</script>
+{% endblock %}

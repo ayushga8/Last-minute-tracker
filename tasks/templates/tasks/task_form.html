@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title %}{% if is_edit %}Edit Task{% else %}New Task{% endif %}{% endblock %}
+{% block page_title %}{% if is_edit %}Edit: {{ task.title }}{% else %}Create New Task{% endif %}{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="form-card glass-card" id="task-form-card">
+        <form method="post" class="styled-form" id="task-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="id_title" class="form-label">Task Title</label>
+                {{ form.title }}
+                {% if form.title.errors %}<span class="form-error">{{ form.title.errors.0 }}</span>{% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_description" class="form-label">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}<span class="form-error">{{ form.description.errors.0 }}</span>{% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="id_deadline" class="form-label">Deadline</label>
+                    {{ form.deadline }}
+                    {% if form.deadline.errors %}<span class="form-error">{{ form.deadline.errors.0 }}</span>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="id_category" class="form-label">Category</label>
+                    {{ form.category }}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="id_estimated_hours" class="form-label">Estimated Hours</label>
+                    {{ form.estimated_hours }}
+                </div>
+                <div class="form-group">
+                    <label for="id_importance_weight" class="form-label">Importance (1-10)</label>
+                    {{ form.importance_weight }}
+                </div>
+            </div>
+
+            {% if is_edit %}
+            <div class="form-group">
+                <label for="id_status" class="form-label">Status</label>
+                {{ form.status }}
+            </div>
+            {% endif %}
+
+            <!-- AI Preview -->
+            <div class="ai-preview-section" id="ai-preview-section" style="display:none;">
+                <div class="ai-preview-header">
+                    <span>🤖 AI Priority Preview</span>
+                    <div class="ai-preview-loading" id="ai-preview-loading" style="display:none;">
+                        <span class="spinner"></span> Analyzing...
+                    </div>
+                </div>
+                <div class="ai-preview-content" id="ai-preview-content"></div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'task_list' %}" class="btn btn-ghost" id="btn-cancel">Cancel</a>
+                <button type="submit" class="btn btn-primary" id="btn-save-task">
+                    {% if is_edit %}Update Task{% else %}Create Task{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // AI Priority Preview on blur
+    const titleInput = document.getElementById('id_title');
+    const deadlineInput = document.getElementById('id_deadline');
+    const previewSection = document.getElementById('ai-preview-section');
+    const previewContent = document.getElementById('ai-preview-content');
+    const previewLoading = document.getElementById('ai-preview-loading');
+
+    async function fetchPreview() {
+        const title = titleInput?.value;
+        const deadline = deadlineInput?.value;
+        if (!title || !deadline) return;
+
+        previewSection.style.display = 'block';
+        previewLoading.style.display = 'flex';
+        previewContent.textContent = '';
+
+        try {
+            const resp = await fetch('{% url "ai_preview" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+                body: JSON.stringify({
+                    title: title,
+                    deadline: deadline,
+                    category: document.getElementById('id_category')?.value || '',
+                    estimated_hours: document.getElementById('id_estimated_hours')?.value || 1,
+                    importance_weight: document.getElementById('id_importance_weight')?.value || 5,
+                }),
+            });
+            const data = await resp.json();
+            previewContent.textContent = data.preview || 'No preview available.';
+        } catch {
+            previewContent.textContent = 'Preview unavailable.';
+        } finally {
+            previewLoading.style.display = 'none';
+        }
+    }
+
+    deadlineInput?.addEventListener('change', fetchPreview);
+</script>
+{% endblock %}

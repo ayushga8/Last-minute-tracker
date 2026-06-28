@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card stat-total" id="stat-total">
+            <div class="stat-icon">📋</div>
+            <div class="stat-info">
+                <span class="stat-value">{{ total_tasks }}</span>
+                <span class="stat-label">Total Tasks</span>
+            </div>
+        </div>
+        <div class="stat-card stat-overdue" id="stat-overdue">
+            <div class="stat-icon">🔴</div>
+            <div class="stat-info">
+                <span class="stat-value">{{ overdue_tasks }}</span>
+                <span class="stat-label">Overdue</span>
+            </div>
+        </div>
+        <div class="stat-card stat-progress" id="stat-progress">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-info">
+                <span class="stat-value">{{ in_progress }}</span>
+                <span class="stat-label">In Progress</span>
+            </div>
+        </div>
+        <div class="stat-card stat-completed" id="stat-completed">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+                <span class="stat-value">{{ completed_today }}</span>
+                <span class="stat-label">Done Today</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="dashboard-main">
+        <!-- Upcoming Deadlines -->
+        <div class="card upcoming-card" id="upcoming-deadlines">
+            <div class="card-header">
+                <h2 class="card-title">⏰ Upcoming Deadlines</h2>
+                <a href="{% url 'task_create' %}" class="btn btn-sm btn-primary" id="btn-quick-add">+ Add Task</a>
+            </div>
+            <div class="card-body">
+                {% if upcoming_tasks %}
+                <div class="task-list-compact">
+                    {% for task in upcoming_tasks %}
+                    <div class="task-item-compact" data-deadline="{{ task.deadline|date:'c' }}" id="task-compact-{{ task.id }}">
+                        <div class="task-priority-dot" style="background: {{ task.priority_color }};"></div>
+                        <div class="task-item-info">
+                            <a href="{% url 'task_detail' task.pk %}" class="task-item-title">{{ task.title }}</a>
+                            <span class="task-item-meta">{{ task.category }} · {{ task.get_priority_tag_display }}</span>
+                        </div>
+                        <div class="task-countdown" data-deadline="{{ task.deadline|date:'c' }}">
+                            <span class="countdown-value">--</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-icon">🎉</span>
+                    <p>No upcoming deadlines! Time to plan ahead.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- AI Suggestions -->
+        <div class="card ai-card" id="ai-suggestions">
+            <div class="card-header">
+                <h2 class="card-title">🤖 AI Suggestions</h2>
+                <a href="{% url 'ai_refresh' %}" class="btn btn-sm btn-ghost" id="btn-ai-refresh">↻ Refresh</a>
+            </div>
+            <div class="card-body">
+                {% if recommendations %}
+                <div class="ai-suggestions-list">
+                    {% for rec in recommendations %}
+                    <div class="ai-suggestion-item">
+                        <span class="ai-type-badge ai-type-{{ rec.recommendation_type }}">
+                            {{ rec.get_recommendation_type_display }}
+                        </span>
+                        <div class="ai-suggestion-text">{{ rec.suggestion_text|linebreaksbr }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-icon">✨</span>
+                    <p>Add tasks and click Refresh to get AI-powered suggestions!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row -->
+    <div class="dashboard-bottom">
+        <!-- Habit Streaks -->
+        <div class="card habits-card" id="habit-streaks">
+            <div class="card-header">
+                <h2 class="card-title">🔥 Habit Streaks</h2>
+                <a href="{% url 'habit_list' %}" class="btn btn-sm btn-ghost">View All →</a>
+            </div>
+            <div class="card-body">
+                {% if habits %}
+                <div class="habit-streak-list">
+                    {% for habit in habits %}
+                    <div class="habit-streak-item" id="habit-streak-{{ habit.id }}">
+                        <span class="habit-name">{{ habit.name }}</span>
+                        <div class="streak-info">
+                            <span class="streak-count">🔥 {{ habit.streak_count }}</span>
+                            {% for badge in habit.badges %}
+                            <span class="badge-emoji" title="{{ badge.1 }}">{{ badge.0 }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-icon">🌱</span>
+                    <p>Start building habits to see your streaks here!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="card notifications-card" id="recent-notifications">
+            <div class="card-header">
+                <h2 class="card-title">🔔 Recent Notifications</h2>
+            </div>
+            <div class="card-body">
+                {% if unread_notifications %}
+                <div class="notification-list">
+                    {% for notif in unread_notifications %}
+                    <div class="notification-item {% if not notif.read %}unread{% endif %}">
+                        <span class="notification-text">{{ notif.message|truncatewords:20 }}</span>
+                        <span class="notification-time">{{ notif.created_at|timesince }} ago</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-icon">🔕</span>
+                    <p>No new notifications.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
