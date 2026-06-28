@@ -48,7 +48,13 @@ class TaskForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['deadline'].input_formats = ['%Y-%m-%dT%H:%M']
+        self.fields['deadline'].input_formats = [
+            '%Y-%m-%dT%H:%M:%S',
+            '%Y-%m-%dT%H:%M',
+            '%Y-%m-%d %H:%M:%S',
+            '%Y-%m-%d %H:%M',
+            '%Y-%m-%d',
+        ]
 
 
 class TaskFilterForm(forms.Form):

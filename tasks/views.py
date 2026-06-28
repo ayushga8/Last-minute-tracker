@@ -1,4 +1,6 @@
 import json
+import logging
+import threading
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -8,6 +10,8 @@ from django.utils import timezone
 from .models import Task, AIRecommendation
 from .forms import TaskForm, TaskFilterForm
 from .ai_helper import get_ai_prioritization, get_priority_preview
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -101,11 +105,13 @@ def task_create_view(request):
             task = form.save(commit=False)
             task.created_by = request.user
             task.save()
-            # Trigger AI prioritization in background
+            # Trigger AI prioritization in background thread
             try:
-                get_ai_prioritization(request.user)
-            except Exception:
-                pass  # Non-critical
+                t = threading.Thread(target=get_ai_prioritization, args=(request.user,))
+                t.daemon = True
+                t.start()
+            except Exception as e:
+                logger.error(f"Failed to start AI thread: {e}")
             messages.success(request, f'Task "{task.title}" created successfully!')
             return redirect('task_list')
     else:
@@ -126,6 +132,13 @@ def task_edit_view(request, pk):
         form = TaskForm(request.POST, instance=task)
         if form.is_valid():
             form.save()
+            # Trigger AI prioritization in background thread
+            try:
+                t = threading.Thread(target=get_ai_prioritization, args=(request.user,))
+                t.daemon = True
+                t.start()
+            except Exception as e:
+                logger.error(f"Failed to start AI thread: {e}")
             messages.success(request, f'Task "{task.title}" updated!')
             return redirect('task_list')
     else:
