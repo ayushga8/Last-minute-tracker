@@ -1,12 +1,9 @@
 """
-Celery periodic tasks for the smart scheduler.
-- Deadline reminders (24h and 1h before)
-- Daily priority digest at 8AM
-- Weekly habit + goal summary on Sundays
-- Broken streak detection
+Periodic tasks for the smart scheduler.
+These run as simple functions (no Celery required).
+Can be triggered via management commands or cron jobs.
 """
 import logging
-from celery import shared_task
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
@@ -16,12 +13,8 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-@shared_task(name='scheduler.check_deadline_reminders')
 def check_deadline_reminders():
-    """
-    Runs every hour. Finds tasks with deadlines approaching
-    in 24h or 1h and sends reminder notifications.
-    """
+    """Find tasks with deadlines approaching and send reminders."""
     from tasks.models import Task
     from scheduler.models import Notification
 
@@ -29,7 +22,6 @@ def check_deadline_reminders():
     one_hour = now + timezone.timedelta(hours=1)
     twenty_four_hours = now + timezone.timedelta(hours=24)
 
-    # 1-hour reminders (urgent)
     urgent_tasks = Task.objects.filter(
         deadline__gte=now,
         deadline__lte=one_hour,
@@ -37,7 +29,6 @@ def check_deadline_reminders():
     ).select_related('created_by')
 
     for task in urgent_tasks:
-        # Check if notification already sent
         exists = Notification.objects.filter(
             user=task.created_by,
             task=task,
@@ -49,7 +40,6 @@ def check_deadline_reminders():
             msg = f'⏰ URGENT: "{task.title}" is due in less than 1 hour!'
             _create_and_send_notification(task.created_by, task, msg)
 
-    # 24-hour reminders
     upcoming_tasks = Task.objects.filter(
         deadline__gte=one_hour,
         deadline__lte=twenty_four_hours,
@@ -72,11 +62,8 @@ def check_deadline_reminders():
     logger.info(f'Checked deadline reminders: {urgent_tasks.count()} urgent, {upcoming_tasks.count()} upcoming')
 
 
-@shared_task(name='scheduler.send_daily_digest')
 def send_daily_digest():
-    """
-    Runs daily at 8AM. Sends each user their priority-sorted task list for the day.
-    """
+    """Send each user their priority-sorted task list for the day."""
     from tasks.models import Task
     from scheduler.models import Notification
 
@@ -114,11 +101,8 @@ def send_daily_digest():
     logger.info('Daily digest sent to all active users')
 
 
-@shared_task(name='scheduler.send_weekly_summary')
 def send_weekly_summary():
-    """
-    Runs every Sunday. Sends habit streak + goal progress summary.
-    """
+    """Send habit streak + goal progress summary."""
     from habits.models import Habit, Goal
     from scheduler.models import Notification
 
@@ -150,11 +134,8 @@ def send_weekly_summary():
     logger.info('Weekly summary sent')
 
 
-@shared_task(name='scheduler.check_broken_streaks')
 def check_broken_streaks():
-    """
-    Runs daily. Checks for broken habit streaks and sends encouragement.
-    """
+    """Check for broken habit streaks and send encouragement."""
     from habits.models import Habit
     from scheduler.models import Notification
 
@@ -174,7 +155,6 @@ def _create_and_send_notification(user, task, message):
     """Create an in-app notification and optionally send an email."""
     from scheduler.models import Notification
 
-    # Create in-app notification
     notification = Notification.objects.create(
         user=user,
         task=task,
@@ -183,7 +163,6 @@ def _create_and_send_notification(user, task, message):
         sent=False,
     )
 
-    # Send email if user has email notifications enabled
     if user.notification_email and user.email:
         try:
             send_mail(
