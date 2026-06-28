@@ -1,16 +1,12 @@
 {
   "builds": [
     {
-      "src": "lifesaver/wsgi.py",
+      "src": "api/index.py",
       "use": "@vercel/python",
       "config": {
         "maxLambdaSize": "50mb",
         "runtime": "python3.12"
       }
-    },
-    {
-      "src": "static/(.*)",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -20,7 +16,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "lifesaver/wsgi.py"
+      "dest": "api/index.py"
     }
   ]
 }
