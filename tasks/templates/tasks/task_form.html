@@ -8,6 +8,18 @@
         <form method="post" class="styled-form" id="task-form">
             {% csrf_token %}
 
+            {% if form.errors %}
+            <div class="form-errors-banner" style="background: rgba(239,68,68,0.15); border: 1px solid #ef4444; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; color: #ef4444;">
+                <strong>⚠️ Please fix the following errors:</strong>
+                <ul style="margin: 8px 0 0 16px;">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                    <li>{{ field|title }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
             <div class="form-group">
                 <label for="id_title" class="form-label">Task Title</label>
                 {{ form.title }}

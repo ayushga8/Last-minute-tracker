@@ -48,6 +48,7 @@ class TaskForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['status'].required = False
         self.fields['deadline'].input_formats = [
             '%Y-%m-%dT%H:%M:%S',
             '%Y-%m-%dT%H:%M',
