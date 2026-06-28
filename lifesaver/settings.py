@@ -28,8 +28,6 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-    'django_celery_beat',
-    'django_celery_results',
     # Local apps
     'accounts',
     'tasks',
